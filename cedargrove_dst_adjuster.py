@@ -26,22 +26,29 @@ import time
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/CedarGroveStudios/CircuitPython_DST_Adjuster.git"
 
+
 # pylint: disable=too-many-return-statements
 def _detect_dst(datetime):
     """Determines if the North American Standard Time (xST) input is
     within the Daylight Saving Time (DST) window. Input to this function is
-    expressed as a structured time object in Standard Time (xST). The function
-    returns ``True`` if the datetime object is within the DST window, ``False``
-    if the datetime object is outside of the DST window. The helper cannot
-    detect DST for a structured time object that was encoded as DST.
+    expressed as a structured datetime object (time tuple) in Standard Time
+    (xST). The function returns ``True`` if the datetime object is within the
+    DST window; ``False`` if outside. The helper cannot detect DST for a
+    structured time object that was encoded as DST.
 
-    :param structured_time datetime: The Standard Time structured time
-    input value. Can be any structured time value within the specified date
+    :param time.struct_time datetime: The Standard Time structured datetime
+    input value. Can be any structured datetime value within the specified date
     calculation range of CircuitPython, currently January 1, 2000 00:00:00 to
     January 19, 2038 03:14:07. No default value.
     """
 
     # Fix weekday and yearday structured time errors
+    if isinstance(datetime, int):
+        # Convert POSIX timestamp (integer) to time.struct_time type
+        time.localtime(datetime)
+    if not isinstance(datetime, time.struct_time):
+        print("ERROR: datetime parameter type must be time.struct_time")
+        return
     datetime = time.localtime(time.mktime(datetime))
 
     # Convert Python time structure from Monday-origin to Sunday-origin.
@@ -95,14 +102,16 @@ def _detect_dst(datetime):
 
 def adjust_dst(datetime):
     """Converts North American Standard Time (xST) to Daylight Saving Time
-    (DST). Input to this function is a structured time object in xST. The
-    function returns a structured time object adjusted to a DST value if
-    appropriate and a flag indicating the DST adjustment was made. The helper
-    cannot correctly detect DST for a structured time object that is encoded as
-    DST.
+    (DST). Input to this function is a structured datetime object (time tuple)
+    in xST. The function returns a structured datetime object adjusted to a DST
+    value if appropriate and a flag indicating if the DST adjustment was made.
+    The helper cannot correctly detect DST for a structured datetime object
+    encoded as DST. If needed, the returned structured time object can
+    subsequently be converted to a timestamp (integer object) in the calling
+    code using: time.mktime(struct_time_object)
 
-    :param structured_time datetime: The Standard Time structured time
-    input value. Can be any structured time value within the specified date
+    :param time.struct_time datetime: The Standard Time structured datetime
+    input value. Can be any structured datetime value within the specified date
     calculation range of CircuitPython, currently January 1, 2000 00:00:00 to
     January 19, 2038 03:14:07. No default value.
     """
